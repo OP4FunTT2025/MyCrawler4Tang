@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>某堂磁力链接爬虫</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #0f1117;
+            color: #c9d1d9;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', sans-serif;
+            transition: background-color 0.3s ease;
+        }
+        .container-fluid {
+            max-width: 1200px;
+            margin-top: 40px;
+        }
+        .card {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+            transform: translateY(-2px);
+        }
+        .card-header {
+            background-color: #1f2328;
+            border-bottom: 1px solid #30363d;
+            border-radius: 12px 12px 0 0 !important;
+        }
+        .card-body {
+            color: #c9d1d9;
+        }
+        .status-box {
+            min-height: 180px;
+        }
+        .progress {
+            height: 24px;
+            font-size: 12px;
+            background-color: #21262d;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            background-color: #238636;
+            transition: width 0.5s ease-in-out;
+            animation: progress-animation 2s ease-in-out infinite;
+        }
+        @keyframes progress-animation {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+        .btn-group {
+            margin-bottom: 25px;
+        }
+        .form-control {
+            background-color: #0d1117;
+            border: 1px solid #30363d;
+            color: #c9d1d9;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        .form-control:focus {
+            background-color: #0d1117;
+            border-color: #238636;
+            color: #c9d1d9;
+            box-shadow: 0 0 0 0.2rem rgba(35, 134, 54, 0.25);
+        }
+        .form-label {
+            color: #8b949e;
+            font-weight: 500;
+        }
+        .form-range {
+            background-color: transparent;
+        }
+        .form-text {
+            color: #8b949e;
+        }
+        pre {
+            background-color: #161b22;
+            border: 1px solid #30363d;
+            color: #c9d1d9;
+            border-radius: 8px;
+        }
+        /* 按钮样式 */
+        .btn {
+            border: 1px solid transparent;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+        }
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s ease;
+        }
+        .btn:hover::before {
+            left: 100%;
+        }
+        .btn-primary {
+            background-color: #238636;
+            color: #ffffff;
+        }
+        .btn-primary:hover {
+            background-color: #2ea043;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(35, 134, 54, 0.4);
+        }
+        .btn-success {
+            background-color: #238636;
+        }
+        .btn-success:hover {
+            background-color: #2ea043;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(35, 134, 54, 0.4);
+        }
+        .btn-danger {
+            background-color: #da3633;
+        }
+        .btn-danger:hover {
+            background-color: #f85149;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(218, 54, 51, 0.4);
+        }
+        .btn-info {
+            background-color: #1f6feb;
+        }
+        .btn-info:hover {
+            background-color: #316dca;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(31, 111, 235, 0.4);
+        }
+        .btn-secondary {
+            background-color: #563d7c;
+        }
+        .btn-secondary:hover {
+            background-color: #6f42c1;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(86, 61, 124, 0.4);
+        }
+        .btn:disabled {
+            background-color: #30363d;
+            color: #8b949e;
+            transform: none;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+        .btn:disabled::before {
+            display: none;
+        }
+        /* 输入框和滑块样式 */
+        .form-range::-webkit-slider-thumb {
+            background-color: #238636;
+            transition: all 0.3s ease;
+        }
+        .form-range::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 10px rgba(35, 134, 54, 0.5);
+        }
+        .form-range::-moz-range-thumb {
+            background-color: #238636;
+            transition: all 0.3s ease;
+        }
+        .form-range::-moz-range-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 10px rgba(35, 134, 54, 0.5);
+        }
+        /* 列表样式 */
+        .list-group {
+            background-color: #161b22;
+            border-radius: 8px;
+        }
+        .list-group-item {
+            background-color: #0d1117;
+            border: 1px solid #30363d;
+            color: #c9d1d9;
+            transition: all 0.3s ease;
+        }
+        .list-group-item:hover {
+            background-color: #161b22;
+            transform: translateX(5px);
+        }
+        /* 页脚样式 */
+        footer {
+            color: #8b949e;
+            margin-top: 60px;
+            padding: 20px 0;
+            border-top: 1px solid #30363d;
+        }
+        
+        /* 自定义工具类 */
+        .bg-secondary {
+            background-color: #21262d !important;
+        }
+        .bg-secondary.bg-opacity-10 {
+            background-color: rgba(33, 38, 45, 0.1) !important;
+        }
+        .text-success {
+            color: #238636 !important;
+        }
+        .text-info {
+            color: #1f6feb !important;
+        }
+        .text-muted {
+            color: #8b949e !important;
+        }
+        
+        /* 磁力链接和地址项动画 */
+        .magnet-item, .url-item {
+            transition: all 0.3s ease;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        .magnet-item:hover, .url-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* 响应式网格布局 */
+        @media (min-width: 768px) {
+            .grid {
+                display: grid;
+            }
+            .grid-cols-1 {
+                grid-template-columns: repeat(1, minmax(0, 1fr));
+            }
+            .grid-cols-2 {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+        
+        /* 间距工具类 */
+        .gap-4 {
+            gap: 1rem;
+        }
+        
+        /* 优化滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #161b22;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #30363d;
+            border-radius: 5px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #484f58;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid px-3 px-md-5">
+        <div class="card shadow-lg mb-5">
+            <div class="card-header bg-primary text-white text-center">
+                <h1 class="mb-2">某堂爬虫（仅供学习和研究使用）</h1>
+                <p class="mb-0">爬取某堂指定论坛的磁力链接和图片</p>
+            </div>
+            
+            <div class="card-body p-4 p-lg-5">
+                <!-- 主内容区域 - 响应式网格布局 -->
+                <div class="row">
+                    <!-- 左侧：爬取参数和状态 -->
+                    <div class="col-md-7 col-lg-8 mb-5 mb-md-0">
+                        <!-- 爬取参数设置 -->
+                        <div class="mb-5">
+                            <h2 class="h4 mb-4 text-primary">爬取参数设置</h2>
+                            <form id="crawlForm" class="space-y-4">
+                                <div class="mb-4">
+                                    <label for="baseUrl" class="form-label mb-2">基础URL</label>
+                                    <input type="text" class="form-control" id="baseUrl" name="base_url" value="https://btd5.thsf7.net" placeholder="请输入基础URL">
+                                    <small class="form-text text-muted mt-1">请输入要爬取的网站基础URL（如：https://example.com）</small>
+                                </div>
+                                <div class="mb-4">
+                                    <label for="forumId" class="form-label mb-2">论坛板块ID</label>
+                                    <input type="text" class="form-control" id="forumId" name="forum_id" value="103" placeholder="默认: 103">
+                                    <small class="form-text text-muted mt-1">请输入要爬取的论坛板块ID</small>
+                                </div>
+                                <div class="mb-4">
+                                    <label for="pages" class="form-label mb-2">爬取页数: <span id="pagesValue" class="text-primary">1</span></label>
+                                    <input type="range" class="form-range" id="pages" name="pages" value="1" min="1" max="20" step="1">
+                                    <small class="form-text text-muted mt-1">请拖动滑块选择要爬取的页数 (1-20)</small>
+                                </div>
+                                <div class="mb-5">
+                                    <label for="cookie" class="form-label mb-2">Cookie设置</label>
+                                    <div class="mb-3">
+                                        <textarea class="form-control" id="cookie" name="cookie" rows="4" placeholder="请输入您的Cookie值...">cPNj_2132_saltkey=KhbhYZHU; cPNj_2132_lastvisit=1764373583; cPNj_2132_atarget=1; cPNj_2132_lastfp=4a8b2ed4d942c6bc0f64e1021691ecc7; sl-session=i7J8TKI4MGnxQkMSruQiWQ==; _safe=LFzQp0o00mj8Z2I0; cPNj_2132_viewid=tid_3164292; cPNj_2132_lastact=1764681618%09forum.php%09forumdisplay; cPNj_2132_st_t=0%7C1764681618%7Cd50ef50766f62b42e905a599b4b9a60e; cPNj_2132_forum_lastvisit=D_95_1764416438D_151_1764419725D_37_1764419885D_141_1764420846D_103_1764681618; cPNj_2132_visitedfid=103D141D37D151D95</textarea>
+                                    </div>
+                                    <button type="button" id="updateCookieBtn" class="btn btn-secondary mb-4">确认更新Cookie</button>
+                                    <div class="card mb-3">
+                                        <div class="card-header text-white">
+                                        当前使用的Cookie
+                                    </div>
+                                        <div class="card-body p-3">
+                                            <pre id="currentCookieDisplay" class="p-2 rounded overflow-auto" style="max-height: 120px; margin-bottom: 0;">cPNj_2132_saltkey=KhbhYZHU; cPNj_2132_lastvisit=1764373583; cPNj_2132_atarget=1; cPNj_2132_lastfp=4a8b2ed4d942c6bc0f64e1021691ecc7; sl-session=i7J8TKI4MGnxQkMSruQiWQ==; _safe=LFzQp0o00mj8Z2I0; cPNj_2132_viewid=tid_3164292; cPNj_2132_lastact=1764681618%09forum.php%09forumdisplay; cPNj_2132_st_t=0%7C1764681618%7Cd50ef50766f62b42e905a599b4b9a60e; cPNj_2132_forum_lastvisit=D_95_1764416438D_151_1764419725D_37_1764419885D_141_1764420846D_103_1764681618; cPNj_2132_visitedfid=103D141D37D151D95</pre>
+                                        </div>
+                                    </div>
+                                    <small class="form-text text-muted">请输入您的Cookie值，用于访问网站</small>
+                                </div>
+                                <div class="mb-5">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="saveImages" name="save_images" value="true">
+                                        <label class="form-check-label" for="saveImages">保存爬取到的图片</label>
+                                    </div>
+                                    <small class="form-text text-muted mt-1">勾选后，爬虫将同时保存网页中的图片到 data/figures 文件夹</small>
+                                </div>
+                                
+                                <!-- 图片下载Cookie设置 -->
+                                <div class="mb-5">
+                                    <h3 class="h6 mb-3 text-primary">图片下载Cookie设置</h3>
+                                    <div class="mb-3">
+                                        <textarea class="form-control" id="imageCookie" rows="3" placeholder="请输入图片下载专用Cookie值..."></textarea>
+                                    </div>
+                                    <button type="button" id="updateImageCookieBtn" class="btn btn-secondary mb-4">确认更新图片下载Cookie</button>
+                                    <div class="card mb-3">
+                                        <div class="card-header text-white">
+                                            当前图片下载Cookie
+                                        </div>
+                                        <div class="card-body p-3">
+                                            <pre id="currentImageCookieDisplay" class="p-2 rounded overflow-auto" style="max-height: 100px; margin-bottom: 0;"></pre>
+                                        </div>
+                                    </div>
+                                    <small class="form-text text-muted">请输入图片下载专用Cookie值，用于爬取图片时的身份验证</small>
+                                </div>
+                                <div class="d-flex flex-wrap gap-3">
+                                    <button type="submit" id="startBtn" class="btn btn-success btn-lg">开始爬取</button>
+                                    <button type="button" id="pauseBtn" class="btn btn-warning btn-lg" style="display: none;">暂停爬取</button>
+                                    <button type="button" id="resumeBtn" class="btn btn-info btn-lg" style="display: none;">继续爬取</button>
+                                    <button type="button" id="downloadBtn" class="btn btn-primary btn-lg" disabled>下载磁力链接</button>
+                                    <button type="button" id="downloadUrlsBtn" class="btn btn-info btn-lg" disabled>下载爬取地址</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- 爬取状态显示 -->
+                        <div class="mb-5">
+                            <h2 class="h4 mb-3 text-primary">爬取状态</h2>
+                            <div class="card status-box shadow-sm">
+                                <div class="card-body pb-2">
+                                    <!-- 主要状态信息 -->
+                                    <div class="row row-cols-1 row-cols-md-4 gap-2 mb-3">
+                                        <div class="bg-secondary bg-opacity-10 p-2 rounded">
+                                            <strong class="text-muted">状态:</strong> <span id="statusText" class="text-success">就绪</span>
+                                        </div>
+                                        <div class="bg-secondary bg-opacity-10 p-2 rounded">
+                                            <strong class="text-muted">磁力数:</strong> <span id="magnetCount" class="text-info">0</span>
+                                        </div>
+                                        <div class="bg-secondary bg-opacity-10 p-2 rounded">
+                                            <strong class="text-muted">页面:</strong> <span id="currentPage">0</span> / <span id="totalPages">0</span>
+                                        </div>
+                                        <div class="bg-secondary bg-opacity-10 p-2 rounded">
+                                            <strong class="text-muted">进度:</strong> <span id="progressText">0%</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- 当前爬取地址 -->
+                                    <div class="mb-3">
+                                        <div class="text-sm text-muted">当前地址:</div>
+                                        <div id="currentUrl" class="text-break bg-secondary bg-opacity-10 p-2 rounded text-sm"></div>
+                                    </div>
+                                    
+                                    <!-- 文件信息 -->
+                                    <div class="row row-cols-1 row-cols-md-2 gap-2 mb-3">
+                                        <div class="bg-secondary bg-opacity-10 p-2 rounded">
+                                            <div class="text-sm text-muted">磁力文件:</div>
+                                            <div id="magnetFileName" class="text-break text-sm">未生成</div>
+                                        </div>
+                                        <div class="bg-secondary bg-opacity-10 p-2 rounded">
+                                            <div class="text-sm text-muted">地址文件:</div>
+                                            <div id="urlFileName" class="text-break text-sm">未生成</div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- 进度条 -->
+                                    <div class="progress mb-3">
+                                        <div id="progressBar" class="progress-bar" role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
+                                            0%
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- 消息 -->
+                                    <div>
+                                        <div class="text-sm text-muted">消息:</div>
+                                        <div id="messageText" class="bg-secondary bg-opacity-10 p-2 rounded text-sm">等待开始...</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 历史记录 -->
+                        <div>
+                            <h2 class="h4 mb-4 text-primary">爬取历史</h2>
+                            <div class="card shadow-sm">
+                                <div class="card-body">
+                                    <ul id="historyList" class="list-group">
+                                        <li class="list-group-item text-muted">暂无爬取历史</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 右侧：结果显示 -->
+                    <div class="col-md-5 col-lg-4">
+                        <!-- 磁力链接显示 -->
+                        <div class="card mb-4 shadow-sm">
+                            <div class="card-header bg-primary text-white">
+                                <h2 class="h5 mb-0">磁力链接 (共 <span id="magnetCountDisplay">0</span> 条)</h2>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <input type="text" id="magnetFilter" class="form-control" placeholder="过滤磁力链接...">
+                                </div>
+                                <div class="d-flex justify-content-end mb-2">
+                                    <button id="copyAllMagnets" class="btn btn-sm btn-primary">复制全部</button>
+                                </div>
+                                <div id="magnetLinksDisplay" class="bg-secondary bg-opacity-10 p-2 rounded display-box overflow-auto" style="max-height: 300px;">
+                                    <p class="text-muted">等待爬取...</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 爬取地址显示 -->
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-info text-white">
+                                <h2 class="h5 mb-0">爬取地址 (共 <span id="urlsCountDisplay">0</span> 条)</h2>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <input type="text" id="urlFilter" class="form-control" placeholder="过滤爬取地址...">
+                                </div>
+                                <div class="d-flex justify-content-end mb-2">
+                                    <button id="copyAllUrls" class="btn btn-sm btn-info">复制全部</button>
+                                </div>
+                                <div id="crawlUrlsDisplay" class="bg-secondary bg-opacity-10 p-2 rounded display-box overflow-auto" style="max-height: 300px;">
+                                    <p class="text-muted">等待爬取...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 使用说明和帮助信息 -->
+        <div class="card shadow-lg mb-5">
+            <div class="card-header bg-primary text-white">
+                <h2 class="h5 mb-0">使用说明</h2>
+            </div>
+            <div class="card-body">
+                <div class="accordion" id="helpAccordion">
+                    <div class="accordion-item">
+                        <h6 class="accordion-header" id="headingOne">
+                            <button class="accordion-button collapsed bg-transparent text-success" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                                🎯 基本使用
+                            </button>
+                        </h6>
+                        <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#helpAccordion">
+                            <div class="accordion-body">
+                                <ul class="mb-0">
+                                    <li>设置爬取参数，包括基础URL、论坛板块ID和爬取页数</li>
+                                    <li>根据需要更新Cookie设置以访问受限内容</li>
+                                    <li>点击"开始爬取"按钮启动爬取任务</li>
+                                    <li>爬取过程中可以随时暂停或继续</li>
+                                    <li>爬取完成后，结果将显示在右侧面板中</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h6 class="accordion-header" id="headingTwo">
+                            <button class="accordion-button collapsed bg-transparent text-info" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                                ⚙️ 功能说明
+                            </button>
+                        </h6>
+                        <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#helpAccordion">
+                            <div class="accordion-body">
+                                <ul class="mb-0">
+                                    <li><strong>响应式布局</strong>：适配不同屏幕尺寸，大屏左右分栏，小屏上下堆叠</li>
+                                    <li><strong>暂停/继续</strong>：灵活控制爬取过程，避免不必要的网络请求</li>
+                                    <li><strong>过滤功能</strong>：快速筛选磁力链接和爬取地址</li>
+                                    <li><strong>一键复制</strong>：支持单个复制和批量复制结果</li>
+                                    <li><strong>实时进度</strong>：显示爬取进度、当前页面和已获取结果数量</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h6 class="accordion-header" id="headingThree">
+                            <button class="accordion-button collapsed bg-transparent text-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                                ❓ 常见问题
+                            </button>
+                        </h6>
+                        <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#helpAccordion">
+                            <div class="accordion-body">
+                                <ul class="mb-0">
+                                    <li><strong>爬取速度慢怎么办？</strong>：可以减少爬取数量或调整页面范围</li>
+                                    <li><strong>爬取失败怎么解决？</strong>：检查网络连接，确保目标网站可访问</li>
+                                    <li><strong>结果不完整？</strong>：部分页面可能需要登录或有反爬机制</li>
+                                    <li><strong>如何导出结果？</strong>：可以点击"复制全部"按钮，然后粘贴到文本文件中</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h6 class="accordion-header" id="headingFour">
+                            <button class="accordion-button collapsed bg-transparent text-warning" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
+                                📝 注意事项
+                            </button>
+                        </h6>
+                        <div id="collapseFour" class="accordion-collapse collapse" aria-labelledby="headingFour" data-bs-parent="#helpAccordion">
+                            <div class="accordion-body">
+                                <ul class="mb-0">
+                                    <li>请遵守目标网站的爬虫协议（robots.txt）</li>
+                                    <li>不要过度爬取，避免给目标网站造成压力</li>
+                                    <li>爬取结果仅用于学习和研究目的</li>
+                                    <li>定期清理爬取结果文件，避免占用过多磁盘空间</li>
+                                    <li>使用前请确保已安装所有依赖包</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 页脚 -->
+        <footer class="mt-4 text-center text-muted">
+            <p>© 2025 某堂磁力链接爬虫 - 仅供学习和研究使用</p>
+        </footer>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 页面加载完成后执行
+        document.addEventListener('DOMContentLoaded', function() {
+            const crawlForm = document.getElementById('crawlForm');
+            const startBtn = document.getElementById('startBtn');
+            const pauseBtn = document.getElementById('pauseBtn');
+            const resumeBtn = document.getElementById('resumeBtn');
+            const stopBtn = document.getElementById('stopBtn');
+            const downloadBtn = document.getElementById('downloadBtn');
+            const downloadUrlsBtn = document.getElementById('downloadUrlsBtn');
+            const statusText = document.getElementById('statusText');
+            const magnetCount = document.getElementById('magnetCount');
+            const currentPage = document.getElementById('currentPage');
+            const totalPages = document.getElementById('totalPages');
+            const progressText = document.getElementById('progressText');
+            const progressBar = document.getElementById('progressBar');
+            const messageText = document.getElementById('messageText');
+            const historyList = document.getElementById('historyList');
+            const pagesSlider = document.getElementById('pages');
+            const pagesValue = document.getElementById('pagesValue');
+            const updateCookieBtn = document.getElementById('updateCookieBtn');
+            const cookieInput = document.getElementById('cookie');
+            const currentCookieDisplay = document.getElementById('currentCookieDisplay');
+            
+            // 过滤和复制相关元素
+            const magnetFilter = document.getElementById('magnetFilter');
+            const urlFilter = document.getElementById('urlFilter');
+            const copyAllMagnets = document.getElementById('copyAllMagnets');
+            const copyAllUrls = document.getElementById('copyAllUrls');
+            
+            // 更新滑块显示值
+            pagesSlider.addEventListener('input', function() {
+                pagesValue.textContent = this.value;
+            });
+            
+            // 更新Cookie按钮点击事件
+            updateCookieBtn.addEventListener('click', function() {
+                const customCookie = cookieInput.value.trim();
+                
+                if (!customCookie) {
+                    alert('请输入Cookie值！');
+                    return;
+                }
+                
+                // 发送请求更新Cookie
+                fetch('/update_cookie', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams({
+                        'cookie': customCookie
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // 更新显示的当前Cookie
+                        currentCookieDisplay.textContent = customCookie;
+                        alert('Cookie更新成功！');
+                    } else {
+                        alert('Cookie更新失败: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('请求失败: ' + error.message);
+                });
+            });
+            
+            // 页面加载时获取当前Cookie
+            fetch('/get_current_cookie')
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    cookieInput.value = data.cookie;
+                    currentCookieDisplay.textContent = data.cookie;
+                }
+            })
+            .catch(error => {
+                console.error('获取Cookie失败:', error);
+            });
+
+            // 获取图片下载Cookie的DOM元素
+            const imageCookieInput = document.getElementById('imageCookie');
+            const updateImageCookieBtn = document.getElementById('updateImageCookieBtn');
+            const currentImageCookieDisplay = document.getElementById('currentImageCookieDisplay');
+
+            // 页面加载时获取当前图片下载Cookie
+            fetch('/get_image_cookie')
+            .then(response => response.json())
+            .then(data => {
+                if (data.current_cookie) {
+                    imageCookieInput.value = data.current_cookie;
+                    currentImageCookieDisplay.textContent = data.current_cookie;
+                }
+            })
+            .catch(error => {
+                console.error('获取图片下载Cookie失败:', error);
+            });
+
+            // 更新图片下载Cookie按钮点击事件
+            updateImageCookieBtn.addEventListener('click', function() {
+                const customCookie = imageCookieInput.value.trim();
+                
+                if (!customCookie) {
+                    alert('请输入图片下载Cookie值！');
+                    return;
+                }
+                
+                // 发送请求更新图片下载Cookie
+                fetch('/update_image_cookie', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: new URLSearchParams({
+                        'cookie': customCookie
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // 更新显示的当前图片下载Cookie
+                        currentImageCookieDisplay.textContent = customCookie;
+                        alert('图片下载Cookie更新成功！');
+                    } else {
+                        alert('图片下载Cookie更新失败: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('请求失败: ' + error.message);
+                });
+            });
+
+            // 开始爬取
+            crawlForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // 显示暂停按钮，隐藏开始按钮
+                startBtn.style.display = 'none';
+                pauseBtn.style.display = 'inline-block';
+                resumeBtn.style.display = 'none';
+                downloadBtn.disabled = true;
+                downloadUrlsBtn.disabled = true;
+                
+                // 清空历史记录
+                historyList.innerHTML = '<li class="list-group-item text-muted">暂无爬取历史</li>';
+                
+                // 发送请求开始爬取
+                const formData = new FormData(crawlForm);
+                fetch('/start_crawl', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'error') {
+                        alert(data.message);
+                        startBtn.style.display = 'inline-block';
+                        pauseBtn.style.display = 'none';
+                        startBtn.disabled = false;
+                    } else {
+                        // 开始轮询状态
+                        pollStatus();
+                    }
+                })
+                .catch(error => {
+                    alert('请求失败: ' + error.message);
+                    startBtn.style.display = 'inline-block';
+                    pauseBtn.style.display = 'none';
+                    startBtn.disabled = false;
+                });
+            });
+
+            // 暂停爬取
+            pauseBtn.addEventListener('click', function() {
+                fetch('/pause_crawl')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        pauseBtn.style.display = 'none';
+                        resumeBtn.style.display = 'inline-block';
+                    } else {
+                        alert('暂停失败: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('请求失败: ' + error.message);
+                });
+            });
+
+            // 继续爬取
+            resumeBtn.addEventListener('click', function() {
+                fetch('/resume_crawl')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        resumeBtn.style.display = 'none';
+                        pauseBtn.style.display = 'inline-block';
+                    } else {
+                        alert('继续失败: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('请求失败: ' + error.message);
+                });
+            });
+
+            // 停止爬取功能（暂未实现）
+
+            // 下载结果
+            downloadBtn.addEventListener('click', function() {
+                window.location.href = '/download';
+            });
+            
+            // 下载爬取地址
+            downloadUrlsBtn.addEventListener('click', function() {
+                window.location.href = '/download_urls';
+            });
+
+            // 过滤功能
+            magnetFilter.addEventListener('input', function() {
+                updateDisplays();
+            });
+            
+            urlFilter.addEventListener('input', function() {
+                updateDisplays();
+            });
+            
+            // 复制全部磁力链接
+            copyAllMagnets.addEventListener('click', function() {
+                if (magnetLinks.length > 0) {
+                    navigator.clipboard.writeText(magnetLinks.join('\n'))
+                        .then(() => {
+                            alert('已复制全部磁力链接到剪贴板');
+                        })
+                        .catch(err => {
+                            console.error('复制失败:', err);
+                            alert('复制失败，请手动复制');
+                        });
+                } else {
+                    alert('没有磁力链接可以复制');
+                }
+            });
+            
+            // 复制全部爬取地址
+            copyAllUrls.addEventListener('click', function() {
+                if (crawlUrls.length > 0) {
+                    navigator.clipboard.writeText(crawlUrls.join('\n'))
+                        .then(() => {
+                            alert('已复制全部爬取地址到剪贴板');
+                        })
+                        .catch(err => {
+                            console.error('复制失败:', err);
+                            alert('复制失败，请手动复制');
+                        });
+                } else {
+                    alert('没有爬取地址可以复制');
+                }
+            });
+
+            // 轮询状态
+            let magnetLinks = [];
+            let crawlUrls = [];
+            
+            // 获取显示元素
+            const magnetCountDisplay = document.getElementById('magnetCountDisplay');
+            const magnetLinksDisplay = document.getElementById('magnetLinksDisplay');
+            const urlsCountDisplay = document.getElementById('urlsCountDisplay');
+            const crawlUrlsDisplay = document.getElementById('crawlUrlsDisplay');
+            
+            // 更新显示内容的函数
+            function updateDisplays() {
+                // 应用当前过滤条件
+                const magnetFilterText = magnetFilter.value.toLowerCase();
+                const filteredMagnets = magnetFilterText ? magnetLinks.filter(link => link.toLowerCase().includes(magnetFilterText)) : magnetLinks;
+                
+                // 更新磁力链接显示
+                magnetCountDisplay.textContent = magnetLinks.length;
+                if (magnetLinks.length > 0) {
+                    magnetLinksDisplay.innerHTML = filteredMagnets.map(link => `
+                        <div class="magnet-item mb-2 p-2 bg-secondary bg-opacity-20 rounded">
+                            <div class="text-break text-sm">${link}</div>
+                            <button class="copy-magnet-btn btn btn-sm btn-primary mt-1" data-magnet="${link}">复制</button>
+                        </div>
+                    `).join('');
+                    
+                    // 添加复制按钮事件
+                    document.querySelectorAll('.copy-magnet-btn').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            const magnet = this.getAttribute('data-magnet');
+                            navigator.clipboard.writeText(magnet)
+                                .then(() => {
+                                    this.textContent = '已复制';
+                                    setTimeout(() => {
+                                        this.textContent = '复制';
+                                    }, 2000);
+                                })
+                                .catch(err => {
+                                    console.error('复制失败:', err);
+                                    alert('复制失败，请手动复制');
+                                });
+                        });
+                    });
+                } else {
+                    magnetLinksDisplay.innerHTML = '<p class="text-muted">暂无磁力链接...</p>';
+                }
+                
+                // 应用当前过滤条件
+                const urlFilterText = urlFilter.value.toLowerCase();
+                const filteredUrls = urlFilterText ? crawlUrls.filter(url => url.toLowerCase().includes(urlFilterText)) : crawlUrls;
+                
+                // 更新爬取地址显示
+                urlsCountDisplay.textContent = crawlUrls.length;
+                if (crawlUrls.length > 0) {
+                    crawlUrlsDisplay.innerHTML = filteredUrls.map(url => `
+                        <div class="url-item mb-2 p-2 bg-secondary bg-opacity-20 rounded">
+                            <div class="text-break text-sm"><a href="${url}" target="_blank" class="text-primary">${url}</a></div>
+                            <button class="copy-url-btn btn btn-sm btn-info mt-1" data-url="${url}">复制</button>
+                        </div>
+                    `).join('');
+                    
+                    // 添加复制按钮事件
+                    document.querySelectorAll('.copy-url-btn').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            const url = this.getAttribute('data-url');
+                            navigator.clipboard.writeText(url)
+                                .then(() => {
+                                    this.textContent = '已复制';
+                                    setTimeout(() => {
+                                        this.textContent = '复制';
+                                    }, 2000);
+                                })
+                                .catch(err => {
+                                    console.error('复制失败:', err);
+                                    alert('复制失败，请手动复制');
+                                });
+                        });
+                    });
+                } else {
+                    crawlUrlsDisplay.innerHTML = '<p class="text-muted">暂无爬取地址...</p>';
+                }
+            }
+            function pollStatus() {
+                fetch('/crawl_status')
+                .then(response => response.json())
+                .then(data => {
+                    // 更新状态显示
+                    statusText.textContent = data.running ? '正在爬取' : '已完成';
+                    magnetCount.textContent = data.magnet_count;
+                    currentPage.textContent = data.current_page;
+                    totalPages.textContent = data.total;
+                    messageText.textContent = data.message;
+                    currentUrl.textContent = data.current_url || '';
+
+                    // 更新进度条
+                    if (data.total > 0) {
+                        const progress = Math.round((data.progress / data.total) * 100);
+                        progressText.textContent = progress + '%';
+                        progressBar.style.width = progress + '%';
+                        progressBar.setAttribute('aria-valuenow', progress);
+                        progressBar.textContent = progress + '%';
+                    }
+
+                    // 更新按钮状态
+                    if (data.running) {
+                        startBtn.style.display = 'none';
+                        if (data.paused) {
+                            pauseBtn.style.display = 'none';
+                            resumeBtn.style.display = 'inline-block';
+                        } else {
+                            pauseBtn.style.display = 'inline-block';
+                            resumeBtn.style.display = 'none';
+                        }
+                        downloadBtn.disabled = true;
+                        downloadUrlsBtn.disabled = true;
+                    } else {
+                        startBtn.style.display = 'inline-block';
+                        pauseBtn.style.display = 'none';
+                        resumeBtn.style.display = 'none';
+                        startBtn.disabled = false;
+                        downloadBtn.disabled = false;
+                        downloadUrlsBtn.disabled = false;
+                    }
+
+                    // 获取最新的磁力链接和爬取地址
+                    if (data.running || data.magnet_count > 0) {
+                        Promise.all([
+                            fetch('/get_magnet_links'),
+                            fetch('/get_crawl_urls')
+                        ])
+                        .then(responses => Promise.all(responses.map(res => res.json())))
+                        .then(results => {
+                            magnetLinks = results[0];
+                            crawlUrls = results[1];
+                            updateDisplays();
+                        })
+                        .catch(error => {
+                            console.error('获取数据失败:', error);
+                        });
+                    }
+
+                    // 如果正在运行，继续轮询
+                    if (data.running) {
+                        setTimeout(pollStatus, 1000);
+                    }
+                })
+                .catch(error => {
+                    console.error('获取状态失败:', error);
+                    setTimeout(pollStatus, 1000);
+                });
+            }
+        });
+    </script>
+</body>
+</html>
