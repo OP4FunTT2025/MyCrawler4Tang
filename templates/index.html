@@ -358,6 +358,7 @@
                                     <button type="submit" id="startBtn" class="btn btn-success btn-lg">开始爬取</button>
                                     <button type="button" id="pauseBtn" class="btn btn-warning btn-lg" style="display: none;">暂停爬取</button>
                                     <button type="button" id="resumeBtn" class="btn btn-info btn-lg" style="display: none;">继续爬取</button>
+                                    <button type="button" id="stopBtn" class="btn btn-danger btn-lg" style="display: none;">停止爬取</button>
                                     <button type="button" id="downloadBtn" class="btn btn-primary btn-lg" disabled>下载磁力链接</button>
                                     <button type="button" id="downloadUrlsBtn" class="btn btn-info btn-lg" disabled>下载爬取地址</button>
                                 </div>
@@ -370,12 +371,15 @@
                             <div class="card status-box shadow-sm">
                                 <div class="card-body pb-2">
                                     <!-- 主要状态信息 -->
-                                    <div class="row row-cols-1 row-cols-md-4 gap-2 mb-3">
+                                    <div class="row row-cols-1 row-cols-md-5 gap-2 mb-3">
                                         <div class="bg-secondary bg-opacity-10 p-2 rounded">
                                             <strong class="text-muted">状态:</strong> <span id="statusText" class="text-success">就绪</span>
                                         </div>
                                         <div class="bg-secondary bg-opacity-10 p-2 rounded">
                                             <strong class="text-muted">磁力数:</strong> <span id="magnetCount" class="text-info">0</span>
+                                        </div>
+                                        <div class="bg-secondary bg-opacity-10 p-2 rounded">
+                                            <strong class="text-muted">图片数:</strong> <span id="imageCount" class="text-info">0</span>
                                         </div>
                                         <div class="bg-secondary bg-opacity-10 p-2 rounded">
                                             <strong class="text-muted">页面:</strong> <span id="currentPage">0</span> / <span id="totalPages">0</span>
@@ -392,7 +396,7 @@
                                     </div>
                                     
                                     <!-- 文件信息 -->
-                                    <div class="row row-cols-1 row-cols-md-2 gap-2 mb-3">
+                                    <div class="row row-cols-1 row-cols-md-3 gap-2 mb-3">
                                         <div class="bg-secondary bg-opacity-10 p-2 rounded">
                                             <div class="text-sm text-muted">磁力文件:</div>
                                             <div id="magnetFileName" class="text-break text-sm">未生成</div>
@@ -400,6 +404,10 @@
                                         <div class="bg-secondary bg-opacity-10 p-2 rounded">
                                             <div class="text-sm text-muted">地址文件:</div>
                                             <div id="urlFileName" class="text-break text-sm">未生成</div>
+                                        </div>
+                                        <div class="bg-secondary bg-opacity-10 p-2 rounded">
+                                            <div class="text-sm text-muted">图片目录:</div>
+                                            <div id="figuresDir" class="text-break text-sm text-muted">未生成</div>
                                         </div>
                                     </div>
                                     
@@ -576,12 +584,16 @@
             const downloadUrlsBtn = document.getElementById('downloadUrlsBtn');
             const statusText = document.getElementById('statusText');
             const magnetCount = document.getElementById('magnetCount');
+            const imageCount = document.getElementById('imageCount');
             const currentPage = document.getElementById('currentPage');
             const totalPages = document.getElementById('totalPages');
             const progressText = document.getElementById('progressText');
             const progressBar = document.getElementById('progressBar');
             const messageText = document.getElementById('messageText');
             const historyList = document.getElementById('historyList');
+            const figuresDirDisplay = document.getElementById('figuresDir');
+            const magnetFileNameDisplay = document.getElementById('magnetFileName');
+            const urlFileNameDisplay = document.getElementById('urlFileName');
             const pagesSlider = document.getElementById('pages');
             const pagesValue = document.getElementById('pagesValue');
             const updateCookieBtn = document.getElementById('updateCookieBtn');
@@ -706,8 +718,18 @@
                 startBtn.style.display = 'none';
                 pauseBtn.style.display = 'inline-block';
                 resumeBtn.style.display = 'none';
+                stopBtn.style.display = 'inline-block';
                 downloadBtn.disabled = true;
                 downloadUrlsBtn.disabled = true;
+                statusText.textContent = '准备中';
+                magnetCount.textContent = '0';
+                imageCount.textContent = '0';
+                magnetFileNameDisplay.textContent = '未生成';
+                urlFileNameDisplay.textContent = '未生成';
+                figuresDirDisplay.textContent = '未生成';
+                progressText.textContent = '0%';
+                progressBar.style.width = '0%';
+                progressBar.textContent = '0%';
                 
                 // 清空历史记录
                 historyList.innerHTML = '<li class="list-group-item text-muted">暂无爬取历史</li>';
@@ -724,6 +746,7 @@
                         alert(data.message);
                         startBtn.style.display = 'inline-block';
                         pauseBtn.style.display = 'none';
+                        stopBtn.style.display = 'none';
                         startBtn.disabled = false;
                     } else {
                         // 开始轮询状态
@@ -734,6 +757,7 @@
                     alert('请求失败: ' + error.message);
                     startBtn.style.display = 'inline-block';
                     pauseBtn.style.display = 'none';
+                    stopBtn.style.display = 'none';
                     startBtn.disabled = false;
                 });
             });
@@ -772,7 +796,19 @@
                 });
             });
 
-            // 停止爬取功能（暂未实现）
+            // 停止爬取
+            stopBtn.addEventListener('click', function() {
+                fetch('/stop_crawl')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status !== 'success') {
+                        alert('停止失败: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    alert('请求失败: ' + error.message);
+                });
+            });
 
             // 下载结果
             downloadBtn.addEventListener('click', function() {
@@ -907,17 +943,56 @@
                     crawlUrlsDisplay.innerHTML = '<p class="text-muted">暂无爬取地址...</p>';
                 }
             }
+
+            function renderHistory(history) {
+                if (!history || history.length === 0) {
+                    historyList.innerHTML = '<li class="list-group-item text-muted">暂无爬取历史</li>';
+                    return;
+                }
+
+                historyList.innerHTML = history.map(item => {
+                    const images = item.images || 0;
+                    const skipped = item.images_skipped || 0;
+                    const imageText = skipped ? `${images} 张 (跳过 ${skipped})` : `${images} 张`;
+                    const figures = item.figures_dir ? `<div class="small text-muted">图片目录: ${item.figures_dir}</div>` : '';
+                    return `
+                        <li class="list-group-item">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <div class="fw-bold">论坛 ${item.forum_id} · ${item.pages} 页</div>
+                                    <div class="small text-muted">${item.timestamp}</div>
+                                </div>
+                                <div class="text-end">
+                                    <div class="small text-info">磁力: ${item.magnets}</div>
+                                    <div class="small text-info">图片: ${imageText}</div>
+                                </div>
+                            </div>
+                            <div class="small text-muted mt-1">磁力文件: ${item.magnet_file || '未生成'}</div>
+                            <div class="small text-muted">地址文件: ${item.url_file || '未生成'}</div>
+                            ${figures}
+                        </li>
+                    `;
+                }).join('');
+            }
             function pollStatus() {
                 fetch('/crawl_status')
                 .then(response => response.json())
                 .then(data => {
                     // 更新状态显示
-                    statusText.textContent = data.running ? '正在爬取' : '已完成';
+                    const statusLabel = data.running
+                        ? (data.paused ? '已暂停' : '正在爬取')
+                        : (data.progress || data.magnet_count || data.image_count ? '已完成' : '就绪');
+                    statusText.textContent = statusLabel;
                     magnetCount.textContent = data.magnet_count;
+                    imageCount.textContent = data.image_count || 0;
                     currentPage.textContent = data.current_page;
                     totalPages.textContent = data.total;
                     messageText.textContent = data.message;
                     currentUrl.textContent = data.current_url || '';
+                    magnetFileNameDisplay.textContent = data.magnet_file_name || '未生成';
+                    urlFileNameDisplay.textContent = data.url_file_name || '未生成';
+                    figuresDirDisplay.textContent = data.figures_dir || '未生成';
+                    renderHistory(data.history);
 
                     // 更新进度条
                     if (data.total > 0) {
@@ -926,11 +1001,17 @@
                         progressBar.style.width = progress + '%';
                         progressBar.setAttribute('aria-valuenow', progress);
                         progressBar.textContent = progress + '%';
+                    } else {
+                        progressText.textContent = '0%';
+                        progressBar.style.width = '0%';
+                        progressBar.setAttribute('aria-valuenow', 0);
+                        progressBar.textContent = '0%';
                     }
 
                     // 更新按钮状态
                     if (data.running) {
                         startBtn.style.display = 'none';
+                        stopBtn.style.display = 'inline-block';
                         if (data.paused) {
                             pauseBtn.style.display = 'none';
                             resumeBtn.style.display = 'inline-block';
@@ -944,6 +1025,7 @@
                         startBtn.style.display = 'inline-block';
                         pauseBtn.style.display = 'none';
                         resumeBtn.style.display = 'none';
+                        stopBtn.style.display = 'none';
                         startBtn.disabled = false;
                         downloadBtn.disabled = false;
                         downloadUrlsBtn.disabled = false;
@@ -976,6 +1058,9 @@
                     setTimeout(pollStatus, 1000);
                 });
             }
+
+            // 页面加载时拉取一次最新状态/历史
+            pollStatus();
         });
     </script>
 </body>

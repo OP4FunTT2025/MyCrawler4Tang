@@ -1,187 +1,96 @@
-# 某堂磁力链接爬虫
+﻿# MyCrawler4Tang
 
-这是一个基于Python的网络爬虫项目，主要用于爬取某堂（https://btd5.thsf7.net）指定论坛的磁力链接和图片资源。支持命令行和Web界面两种使用方式，提供友好的图形化操作界面和实时状态监控功能。本项目仅供学习和研究使用！
+Forum magnet-link crawler with both CLI tools and a Flask dashboard. It scrapes thread pages, writes magnet links to files, and can optionally download post images. Intended for learning and research only.
 
-## 🌟 程序特色
+## Features
+- Multi-page forum crawl via `CrawlSHT.py`; single-thread crawl via `CrawlOne.py`
+- Flask UI (`app.py`) to start/pause/resume/stop jobs, view progress, and download outputs
+- Optional image downloads with separate image-cookie support and per-thread folders
+- Configurable base URL, forum id, page range, delay, and cookies (env vars or form inputs)
+- Outputs magnet lists, crawled URL lists, and image directories under `data/`
+- Lightweight parser unit tests in `test_crawler.py` (no network required)
 
-### 核心功能
+## Project layout
+- `CrawlSHT.py` - multi-page CLI entry point
+- `CrawlOne.py` - single-thread CLI entry point
+- `crawler_core.py` - shared HTTP session, parsing, and image download helpers
+- `app.py` and `templates/index.html` - Flask dashboard
+- `data/` - runtime outputs (magnet files, URL files, images)
+- `test_crawler.py` - parsing regression tests
+- `AGENTS.md` - repository guidance
+- `readme.md` - this file
 
-- 🎯 **精确爬取**：针对指定论坛设计，高效提取磁力链接
-- 📸 **图片爬取**：支持选择性保存爬取到的图片资源（可在Web界面控制）
-- 📄 **智能过滤**：先检测图片可访问性再保存，确保资源有效
-- 📊 **多页支持**：可自定义爬取页数（1-20页）
-- 💾 **自动保存**：将爬取结果按时间戳命名保存
+## Requirements
+- Python 3.8+
+- Dependencies: `requests`, `beautifulsoup4`, `lxml`, `flask`
 
-### Web界面亮点
-
-- 🎨 **友好界面**：响应式设计，支持多设备访问
-- 🍪 **Cookie自定义**：直接在界面中输入和修改Cookie
-- 📈 **实时监控**：显示爬取进度、状态和统计信息
-- ⏯️ **灵活控制**：支持开始、暂停、继续爬取操作
-- 📥 **一键下载**：爬取完成后直接下载磁力链接文件
-- 📁 **图片管理**：图片自动保存到以论坛ID+时间命名的目录
-
-## 📋 环境依赖
-
-- Python 3.7+
-- requests (网络请求)
-- BeautifulSoup4 (HTML解析)
-- lxml (解析器)
-- Flask (Web界面支持)
-
-## 🚀 安装使用
-
-### 1. 克隆项目
-
+## Setup
 ```bash
-git clone <项目地址>
-cd MyCrawler
-```
-
-### 2. 安装依赖
-
-#### 方式一：使用pip安装
-
-```bash
-# 安装所有依赖
-pip install requests beautifulsoup4 lxml flask
-```
-
-#### 方式二：使用虚拟环境（推荐）
-
-```bash
-# 创建虚拟环境
 python -m venv .venv
-
-# 激活虚拟环境
-# Windows
-.venv\Scripts\activate
-# Linux/macOS
-source .venv/bin/activate
-
-# 安装依赖
+# Windows: .venv\Scripts\activate
+# macOS/Linux: source .venv/bin/activate
 pip install requests beautifulsoup4 lxml flask
 ```
 
-### 3. 运行程序
+## CLI usage
 
-#### 方式一：Web界面（推荐）
+### Crawl multiple forum pages
+```bash
+python CrawlSHT.py \
+  --base-url https://btd5.thsf7.net \
+  --forum-id 103 \
+  --start-page 1 --end-page 5 \
+  --cookie "cPNj_2132=..." \
+  --save-images \
+  --figures-dir data/figures \
+  --delay 1.0
+```
+- Magnet links are written to `data/magnet_file_<timestamp>.txt` unless `--output` is provided.
+- Images (when `--save-images`) land in `data/figures/forum_<id>_<timestamp>/`.
+- `--delay` controls the per-page sleep (seconds).
 
+### Crawl a single thread
+```bash
+python CrawlOne.py \
+  https://btd5.thsf7.net/thread-3182886-1-1.html \
+  --save-images \
+  --output-file data/magnet_links.txt \
+  --image-dir data/figures/custom \
+  --cookie "cPNj_2132=..."
+```
+- Default base URL can be overridden with `--base-url` or `CRAWLER_BASE_URL`.
+- If no output path is given, a timestamped file is created in `data/`.
+
+## Flask dashboard
 ```bash
 python app.py
+# Open http://127.0.0.1:5000
 ```
+- Configure base URL, forum id, page count, cookies, and image saving from the form.
+- Controls: start, pause, resume, stop; view live progress, current URL, counts.
+- Downloads: magnet file, crawled URL file, and (when enabled) image folder path shown.
+- Keeps a short crawl history in the UI.
 
-在浏览器中访问：`http://127.0.0.1:5000`
+## Configuration
+- `CRAWLER_COOKIE`: default Cookie header for forum requests.
+- `CRAWLER_IMAGE_COOKIE`: optional Cookie header for image requests (falls back to `CRAWLER_COOKIE`).
+- `CRAWLER_BASE_URL`: optional default base URL for single-thread CLI.
+- Cookies can also be pasted directly into the CLI flags or Flask form.
 
-#### 方式二：命令行
+## Outputs
+- Magnet lists: `data/magnet_file_<timestamp>.txt`
+- Crawled URLs: `data/url_file_<timestamp>.txt` (Flask flow)
+- Images: `data/figures/...` organized per forum and per thread with sanitized names
+- Timestamps use `YYYY_MM_DD_HH_MM_SS` for easy sorting.
 
-##### 使用CrawlSHT.py（论坛爬取）
-
-```bash
-python CrawlSHT.py
-```
-
-##### 使用CrawlOne.py（单页爬取）
-
-```bash
-# 基本用法：爬取指定网址的磁力链接
-python CrawlOne.py <url>
-
-# 爬取指定网址并保存图片
-python CrawlOne.py <url> --save-images
-
-# 自定义磁力链接输出文件
-python CrawlOne.py <url> --output-file magnet_links.txt
-
-# 自定义图片保存目录
-python CrawlOne.py <url> --save-images --image-dir my_images
-
-# 查看帮助信息
-python CrawlOne.py --help
-```
-
-**参数说明：**
-
-- `<url>`：必填参数，要爬取的目标网址
-- `--save-images`：可选参数，是否保存图片
-- `--output-file`：可选参数，磁力链接输出文件路径（默认：magnet_<时间戳>.txt）
-- `--image-dir`：可选参数，图片保存目录路径（默认：figures_<时间戳>）
-
-## 💻 Web界面使用指南
-
-1. **启动服务**：运行 `python app.py`
-2. **访问界面**：在浏览器中打开 `http://127.0.0.1:5000`
-3. **设置参数**：
-   - 论坛板块ID：输入要爬取的板块ID
-   - 爬取页数：拖动滑块设置（1-20页）
-   - Cookie设置：需要更新某堂的cookie
-   - 保存图片：勾选则保存爬取到的图片。若需要爬取图片，需要提供图片地址的cookie。请注意某堂网站不提供图片的直接下载，需要外联到其它网站。
-4. **开始爬取**：点击"开始爬取"按钮
-5. **监控进度**：在状态区域查看实时爬取信息
-6. **下载结果**：爬取完成后点击"下载磁力链接"按钮
-
-## 🧪 测试
-
-项目包含测试文件，用于验证爬虫功能：
-
+## Testing
 ```bash
 python test_crawler.py
 ```
+Tests cover parser helpers and filename sanitization without hitting the network.
 
-## 📁 项目结构
-
-```
-MyCrawler/
-├── CrawlSHT.py      # 论坛爬取主程序
-├── CrawlOne.py      # 单页爬取工具
-├── app.py           # Web界面主程序
-├── test_crawler.py  # 测试文件
-├── data/            # 数据保存目录
-│   ├── magnet_file*.txt  # 磁力链接文件
-│   └── figures/          # 图片保存目录
-│       └── forum_{ID}_{时间戳}/  # 图片分类目录
-├── templates/       # Web界面模板
-│   └── index.html   # 主页面模板
-├── .gitignore       # Git忽略文件配置
-├── .venv/           # Python虚拟环境
-└── readme.md        # 项目说明文档
-```
-
-## ⚠️ 重要提示
-
-1. **Cookie管理**：Cookie信息可能会过期，如需持续使用请定期更新
-2. **爬取频率**：请勿设置过高的爬取频率，避免对目标网站造成过大压力
-3. **图片爬取**：勾选保存图片选项后，图片将保存在 `data/figures/` 目录下
-4. **状态查看**：爬取过程中的详细日志可在终端查看
-5. **错误处理**：程序包含错误处理机制，单个资源失败不会影响整体爬取
-
-## 📄 许可证
-
-**⚠️ 明确声明：本项目仅用于学习和研究目的！**
-
-- 严禁用于任何商业用途
-- 严禁用于任何非法用途
-- 使用者需自行承担所有法律责任
-
-本项目旨在提供网络爬虫技术的学习案例，展示如何使用Python进行网络数据采集、分析和可视化。请遵守目标网站的使用条款和robots.txt文件规定。
-
-## 📋 TODO事项
-
-- [ ] 添加更多的爬取目标网站支持
-- [ ] 实现代理IP池功能，提高爬取稳定性
-- [ ] 增加数据去重功能，避免重复爬取相同资源
-- [ ] 添加更多的过滤选项（如按时间、按大小等）
-- [ ] 实现多线程/异步爬取，提高爬取速度
-- [ ] 添加数据库支持，存储爬取历史记录
-- [ ] 优化Web界面，添加更多统计图表和分析功能
-- [ ] 编写更完善的单元测试和集成测试
-- [ ] 添加日志系统，方便问题排查
-- [ ] 实现爬虫配置文件功能，支持更灵活的配置
-
-## 📧 联系方式
-
-如有技术问题或建议，欢迎提交issue或联系开发者。
-
----
-
-*© 2025 某堂磁力链接爬虫 - 仅供学习和研究使用*
+## Safety and etiquette
+- For educational/research use only; respect the target site's terms and robots rules.
+- Keep crawl delays reasonable to avoid throttling; defaults include a 1s sleep.
+- Do not commit or share cookies or other secrets; load them via env vars or local input.
+- Verify cookies are current if you see 302/403 responses.
